@@ -1,0 +1,45 @@
+name: Terraform dev Apply
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  terraform-dev:
+    name: terraform dev
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: hashicorp/setup-terraform@v3
+      - name: create backend config
+        run: |
+          echo "bucket = \"${{ secrets.TF_STATE_BUCKET }}\"" > backend.tfvars
+          echo "key = \"${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/${{ github.ref_name }}/terraform.tfstate\"" >> backend.tfvars
+          echo "access_key = \"${{ secrets.TF_STATE_ACCESS_KEY }}\"" >> backend.tfvars
+          echo "secret_key = \"${{ secrets.TF_STATE_SECRET_KEY }}\"" >> backend.tfvars
+          echo "region = \"us-east-1\"" >> backend.tfvars
+          echo "role_arn = \"arn:aws:iam::966085404185:role/terraform-s3-role\"" >> backend.tfvars
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend-config=backend.tfvars
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_environment: ${{ github.ref_name }}
+          TF_VAR_github_token: ${{ secrets.TF_VAR_github_token }}
+          TF_VAR_aws_access_key: ${{ secrets.TF_VAR_access_key }}
+          TF_VAR_aws_secret_key: ${{ secrets.TF_VAR_secret_key }}
+          TF_VAR_aws_region: us-east-1
+          TF_VAR_cluster_name: ${{ secrets.TF_VAR_cluster_name }}

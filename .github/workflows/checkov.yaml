@@ -1,0 +1,20 @@
+name: "Checkov GitHub Action"
+permissions: read-all
+
+on:
+  pull_request:
+    branches: [dev, staging, prod, main]
+
+jobs:
+  checkov:
+    name: checkov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12.1347.0
+        with:
+          directory: "."
+          config_file: ".checkov.yaml"
