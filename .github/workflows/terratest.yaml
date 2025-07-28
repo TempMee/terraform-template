@@ -5,7 +5,10 @@ on:
   push:
     branches: [development, main]
 
-permissions: read-all
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   terratest:
